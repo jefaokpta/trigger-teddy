@@ -63,5 +63,6 @@ declare _disp char(20);
         end if;
       end if;
     end if;
- END$$
+ END 
+ $$
 DELIMITER ;

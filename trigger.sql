@@ -1,3 +1,5 @@
+DELIMITER $$
+CREATE TRIGGER `ajustTransfer` AFTER INSERT ON `cdr` FOR EACH ROW
 BEGIN
 declare _numcalls int;
 declare _id int;
@@ -8,14 +10,21 @@ declare _disp char(20);
 
     if new.channel != 'Console/dsp' then
       if new.lastapp = 'NoOp' and new.accountcode >= 2 and new.billsec > 0 then
-        if new.dcontext = 'dialPeer' then           update relcalls set duration=(duration+new.duration),billsec=(billsec+new.billsec),accountcode=new.accountcode,
+        if new.dcontext = 'dialPeer' then           
+          update relcalls set duration=(duration+new.duration),billsec=(billsec+new.billsec),accountcode=new.accountcode,
             price=(select tarifadorVip((billsec+new.billsec),new.accountcode,substr(new.lastdata,1,3)))
               where calldate BETWEEN concat(substr(now(),1,10),' 00:00:00') and now()
                 and company_id = substr(new.lastdata,1,3) and channel=new.dstchannel;
-        elseif new.dcontext = 'dialRoute' then           update relcalls set duration=(duration+new.duration),billsec=(billsec+new.billsec),
+        elseif new.dcontext = 'dialRoute' then           
+          update relcalls set duration=(duration+new.duration),billsec=(billsec+new.billsec),
             price=(select tarifadorVip((billsec+new.billsec),accountcode,substr(new.lastdata,1,3)))
               where calldate BETWEEN concat(substr(now(),1,10),' 00:00:00') and now()
                 and company_id = substr(new.lastdata,1,3) and channel=new.channel;
+        elseif new.dcontext = 'dialRoute' then -- corrigir tempos de ligacoes callback
+            update relcalls set duration=new.duration,billsec=new.billsec,accountcode=new.accountcode,
+                price=(select tarifadorVip(new.billsec,new.accountcode,new.company_id))
+                  where calldate BETWEEN concat(substr(now(),1,10),' 00:00:00') and now()
+                    and channel=new.dstchannel;
         end if;
       elseif substr(new.dcontext,1,6) = 'TRANSF' and new.accountcode >= 2 and new.billsec > 0 then 
         update relcalls set duration=(duration+new.duration),billsec=(billsec+new.billsec),
@@ -54,4 +63,6 @@ declare _disp char(20);
         end if;
       end if;
     end if;
- END
+ END 
+ $$
+DELIMITER ;

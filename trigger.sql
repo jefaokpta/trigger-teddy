@@ -15,11 +15,6 @@ declare _disp char(20);
             price=(select tarifadorVip((billsec+new.billsec),new.accountcode,substr(new.lastdata,1,3)))
               where calldate BETWEEN concat(substr(now(),1,10),' 00:00:00') and now()
                 and company_id = substr(new.lastdata,1,3) and channel=new.dstchannel;
-        elseif new.dcontext = 'dialRoute' then           
-          update relcalls set duration=(duration+new.duration),billsec=(billsec+new.billsec),
-            price=(select tarifadorVip((billsec+new.billsec),accountcode,substr(new.lastdata,1,3)))
-              where calldate BETWEEN concat(substr(now(),1,10),' 00:00:00') and now()
-                and company_id = substr(new.lastdata,1,3) and channel=new.channel;
         elseif new.dcontext = 'dialRoute' then -- corrigir tempos de ligacoes callback
             update relcalls set duration=new.duration,billsec=new.billsec,accountcode=new.accountcode,
                 price=(select tarifadorVip(new.billsec,new.accountcode,new.company_id))
